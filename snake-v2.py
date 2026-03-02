@@ -3,14 +3,14 @@ import numpy as np
 import random
 import sys
 
-# ================== 公共参数 ==================
+# Public Parameters
 GRID_SIZE = 7
 CELL_SIZE = 50
 WIDTH = GRID_SIZE * CELL_SIZE
 HEIGHT = GRID_SIZE * CELL_SIZE
 FPS = 10
 
-# 颜色定义
+# Color Definition
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 200, 0)
@@ -19,14 +19,14 @@ RED = (200, 0, 0)
 BLUE = (0, 0, 200)
 YELLOW = (255, 255, 0)
 
-# 方向向量
+# Direction vector
 DIR_VECTORS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
-# 动作映射
+# Action Mapping
 LEFT_TURN = {0: 2, 2: 1, 1: 3, 3: 0}
 RIGHT_TURN = {0: 3, 3: 1, 1: 2, 2: 0}
 
-# Q-learning 参数
+# Q-learning
 ALPHA = 0.1
 GAMMA = 0.9
 EPSILON = 0.2
@@ -34,14 +34,16 @@ EPSILON_DECAY = 0.995
 MIN_EPSILON = 0.01
 EPISODES = 3000
 
-# ================== 公共特征提取 ==================
+# Public Feature Extraction
 def get_food_dir(head, food):
     if food is None:
-        return 0  # 不会在移动时调用，仅占位
+        return 0  # Will not be invoked during movement， serves only as a placeholder.
     hr, hc = head
     fr, fc = food
     dr = fr - hr
     dc = fc - hc
+    # The relative positions of food items in relation to the snake head
+    # totaling 8 types: Up, Down, Left, Right, Top-Left, Bottom-Left, Top-Right, Bottom-Right
     if dr == 0 and dc > 0: return 3
     if dr == 0 and dc < 0: return 2
     if dr < 0 and dc == 0: return 0
@@ -52,6 +54,7 @@ def get_food_dir(head, food):
     if dr > 0 and dc < 0: return 5
     return 0
 
+# Detect whether there are obstacles in the squares directly in front of, to the left front of, and to the right front of the snake head.
 def get_obstacles(snake, direction):
     head = snake[0]
     obstacles = [False, False, False]
@@ -77,6 +80,7 @@ def get_obstacles(snake, direction):
         obstacles[2] = True
     return tuple(obstacles)
 
+# Combine the three features into a unique integer ID
 def get_state_id(snake, food, direction):
     head = snake[0]
     food_dir = get_food_dir(head, food)
@@ -85,7 +89,7 @@ def get_state_id(snake, food, direction):
     state_id = (direction * 8 + food_dir) * 8 + obstacle_bits
     return state_id
 
-# ================== 训练版本（食物随机生成） ==================
+# Training Version: Randomly generated using food
 def reset_game_train():
     center = GRID_SIZE // 2
     snake = [(center, center), (center, center-1), (center, center-2)]
@@ -101,6 +105,7 @@ def place_food_train(snake):
         return None
     return random.choice(free_cells)
 
+# Execute a single action, returning a new state and reward
 def step_train(snake, food, direction, action):
     if action == 0:
         new_direction = LEFT_TURN[direction]
@@ -139,7 +144,7 @@ def step_train(snake, food, direction, action):
     elif new_head in new_snake[1:]:
         reward = -100
         done = True
-
+    # Return the total reward list for all episodes for graph analysis
     return new_snake, new_food, new_direction, reward, done, score_inc
 
 
@@ -147,7 +152,7 @@ def reset_game_demo():
     center = GRID_SIZE // 2
     snake = [(center, center), (center, center-1), (center, center-2)]
     direction = random.choice([0, 1, 2, 3])
-    food = None  # 初始无食物
+    food = None  # Initially without food
     score = 0
     return snake, food, direction, score
 
@@ -168,10 +173,10 @@ def step_demo(snake, food, direction, action):
 
     if ate_food:
         reward = 10
-        new_food = None  # 食物消失
+        new_food = None  # Food vanishes
         score_inc = 1
         done = False
-        # 检查是否填满棋盘
+        # Check if the board is filled
         if len(new_snake) == GRID_SIZE * GRID_SIZE:
             reward = 100
             done = True
@@ -193,7 +198,7 @@ def step_demo(snake, food, direction, action):
 
     return new_snake, new_food, new_direction, reward, done, score_inc
 
-# ================== Q-learning 训练 ==================
+# Q-learning training
 Q = np.zeros((256, 3))
 
 def train():
@@ -236,31 +241,32 @@ def train():
     print("Training completed！")
     return episode_rewards
 
-# ================== Pygame 演示 ==================
+
+
 def draw_game(screen, snake, food, direction, score, mode):
     screen.fill(WHITE)
 
-    # 绘制网格线
+    # Draw grid lines
     for x in range(0, WIDTH, CELL_SIZE):
         pygame.draw.line(screen, BLACK, (x, 0), (x, HEIGHT))
     for y in range(0, HEIGHT, CELL_SIZE):
         pygame.draw.line(screen, BLACK, (0, y), (WIDTH, y))
 
-    # 绘制食物（如果存在）
+    # Draw food
     if food:
         fr, fc = food
         rect = pygame.Rect(fc*CELL_SIZE, fr*CELL_SIZE, CELL_SIZE, CELL_SIZE)
         pygame.draw.rect(screen, RED, rect)
         pygame.draw.circle(screen, YELLOW, rect.center, CELL_SIZE//4)
 
-    # 绘制蛇
+    # Drawing a Snake
     for i, (r, c) in enumerate(snake):
         color = GREEN if i == 0 else DARK_GREEN
         rect = pygame.Rect(c*CELL_SIZE, r*CELL_SIZE, CELL_SIZE, CELL_SIZE)
         pygame.draw.rect(screen, color, rect)
         pygame.draw.rect(screen, BLACK, rect, 2)
 
-    # 显示得分和模式
+    # Display score and pattern
     font = pygame.font.Font(None, 24)
     score_text = font.render(f"Score: {score}", True, BLACK)
     screen.blit(score_text, (10, 10))
@@ -285,34 +291,34 @@ def demo():
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    # 只有食物存在时才能移动
+                    # Movement is only possible when food is present
                     if food is not None:
                         state = get_state_id(snake, food, direction)
                         action = np.argmax(Q[state])
                         snake, food, direction, reward, done, inc = step_demo(snake, food, direction, action)
                         score += inc
                         if done:
-                            print("游戏结束！")
-                            # 重置
+                            print("Game over！")
+                            # reset
                             snake, food, direction, score = reset_game_demo()
                     else:
-                        print("请先点击放置食物！")
+                        print("Please click to place the food first！")
                 elif event.key == pygame.K_r:
                     snake, food, direction, score = reset_game_demo()
-                    print("游戏重置")
+                    print("Game Reset")
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                # 鼠标点击放置食物
+                # Click the mouse to place food
                 x, y = event.pos
                 c = x // CELL_SIZE
                 r = y // CELL_SIZE
                 if 0 <= r < GRID_SIZE and 0 <= c < GRID_SIZE:
                     new_food = (r, c)
-                    # 检查是否被蛇占据
+                    # Check if it has been occupied by a snake
                     if new_food not in snake:
                         food = new_food
-                        print(f"食物放置到 {new_food}")
+                        print(f"Food placed on {new_food}")
                     else:
-                        print("该格子有蛇，不能放置食物")
+                        print("This square contains a snake, so food cannot be placed here.")
 
         draw_game(screen, snake, food, direction, score, mode)
         clock.tick(FPS)
@@ -320,9 +326,8 @@ def demo():
     pygame.quit()
     sys.exit()
 
-# ================== 主程序 ==================
 if __name__ == "__main__":
-    print("开始训练...")
+    print("training...")
     rewards = train()
     try:
         import matplotlib.pyplot as plt
@@ -332,6 +337,6 @@ if __name__ == "__main__":
         plt.title('Training Progress')
         plt.show()
     except ImportError:
-        print("未安装matplotlib，跳过绘图。")
-    print("进入演示模式，按空格键执行最优动作，按R重置，点击格子放置食物。")
+        print("matplotlib is not installed, skipping plotting.")
+    print("Enter demo mode, press the spacebar to execute the optimal move, press R to reset, and click on a grid to place food.")
     demo()
