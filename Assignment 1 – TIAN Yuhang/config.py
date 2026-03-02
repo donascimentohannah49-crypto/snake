@@ -1,0 +1,24 @@
+# Public Parameters
+GRID_SIZE = 7
+CELL_SIZE = 50
+WIDTH = GRID_SIZE * CELL_SIZE
+HEIGHT = GRID_SIZE * CELL_SIZE
+FPS = 10
+
+# Q-learning
+ALPHA = 0.1
+GAMMA = 0.9
+EPSILON = 0.2
+EPSILON_DECAY = 0.995
+MIN_EPSILON = 0.01
+EPISODES = 3000
+
+# Color Definition
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GREEN = (0, 200, 0)
+DARK_GREEN = (0, 150, 0)
+RED = (200, 0, 0)
+BLUE = (0, 0, 200)
+YELLOW = (255, 255, 0)
+
